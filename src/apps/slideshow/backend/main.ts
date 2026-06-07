@@ -1,12 +1,12 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { registerRoutes } from "./routes/routes";
+import { registerRoutes } from "../routes/routes";
 
 import {
   registerProtocols,
   registerSchemesAsPrivileged,
-} from "./helpers/media_protocol";
+} from "../helpers/media_protocol";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
