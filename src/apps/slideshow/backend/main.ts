@@ -11,8 +11,6 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-registerRoutes();
-
 function createWindow() {
   const win = new BrowserWindow({
     fullscreen: false,
@@ -31,6 +29,7 @@ function createWindow() {
   }
 }
 
+registerRoutes();
 registerSchemesAsPrivileged();
 
 app.whenReady().then(() => {

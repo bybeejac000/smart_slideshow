@@ -1,8 +1,6 @@
 import fs from "node:fs";
 
-const PHOTOS_PATH =
-  process.env.PHOTOS_PATH ||
-  "C:/Users/jakeb/Downloads/ring_doorbell/doorbell_frames";
+const PHOTOS_PATH = process.env.PHOTOS_PATH;
 export class PhotoHelper {
   async getList(): Promise<string[]> {
     if (!PHOTOS_PATH) throw new Error("PAHI:LJLKTH_TO_PHOTOS is not set");
