@@ -1,3 +1,12 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+dist-electron
+release
+
 # Logs
 logs
 *.log
@@ -6,16 +15,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-/electron
-/dist-electron
-/.vscode
-/.npmrc
-electron-builder.json5
+
+# Environment & local config
 .env
-node_modules
-dist
-dist-ssr
+.env.*
+!.env.example
 *.local
+.npmrc
+electron-builder.json5
 
 # Editor directories and files
 .vscode/*
@@ -27,3 +34,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#builds
+dist
+dist-electron

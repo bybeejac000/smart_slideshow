@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import Slideshow from "./slideshow";
+import Slideshow from "./Slideshow";
 
 const photos = await window.photoHelper.getList();
 

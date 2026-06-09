@@ -1,4 +1,8 @@
+# pnpm does not run dependency build scripts by default. This file approves the
+# packages that genuinely need them:
+#   - electron: postinstall downloads the platform Electron binary
+#   - esbuild:  postinstall installs its native binary (used by Vite)
+# (libpq was removed alongside the unused pg / pg-native dependencies.)
 allowBuilds:
   electron: true
   esbuild: true
-  libpq: true

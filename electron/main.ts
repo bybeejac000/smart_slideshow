@@ -1,12 +1,12 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { registerRoutes } from "../routes/routes";
+import { registerIpcHandlers } from "./ipc";
 
 import {
   registerProtocols,
   registerSchemesAsPrivileged,
-} from "../helpers/media_protocol";
+} from "./media-protocol";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +29,7 @@ function createWindow() {
   }
 }
 
-registerRoutes();
+registerIpcHandlers();
 registerSchemesAsPrivileged();
 
 app.whenReady().then(() => {
