@@ -19,6 +19,8 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
+      webSecurity: false,
+      allowRunningInsecureContent: true,
     },
   });
 

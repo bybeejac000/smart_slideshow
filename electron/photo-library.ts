@@ -1,17 +1,13 @@
-import fs from "node:fs";
+import client from "./redis/redis";
 
-const PHOTOS_PATH = process.env.PHOTOS_PATH;
+const PHOTOS_LIST_KEY = process.env.PHOTOS_LIST_KEY;
+await client.connect();
 
 export class PhotoLibrary {
   async getList(): Promise<string[]> {
-    return [
-      "https://m.media-amazon.com/images/I/81eKN8JFO+L._SL1500_.jpg",
-      "https://m.media-amazon.com/images/I/41fh3WWECQL._SY445_SX342_QL70_FMwebp_.jpg",
-    ];
-    if (!PHOTOS_PATH) throw new Error("PHOTOS_PATH is not set");
-    return fs
-      .readdirSync(PHOTOS_PATH)
-      .filter((f) => /\.(jpe?g|png|webp)$/i.test(f))
-      .map((f) => `media://${PHOTOS_PATH}/${f}`);
+    if (!PHOTOS_LIST_KEY) throw new Error("PHOTOS_LIST_KEY is not set");
+    const photoLinks = await client.lRange(PHOTOS_LIST_KEY, 0, -1);
+    console.log("Photo links retrieved from Redis:", photoLinks);
+    return photoLinks ? photoLinks : [];
   }
 }

@@ -29,6 +29,11 @@ export default defineConfig(({ mode }) => {
             // load a non-existent dist/index.html.
             define: {
               "process.env.PHOTOS_PATH": JSON.stringify(env.PHOTOS_PATH ?? ""),
+              "process.env.REDIS_HOST": JSON.stringify(env.REDIS_HOST ?? ""),
+              "process.env.REDIS_PORT": JSON.stringify(env.REDIS_PORT ?? ""),
+              "process.env.PHOTOS_LIST_KEY": JSON.stringify(
+                env.PHOTOS_LIST_KEY ?? "",
+              ),
             },
           },
         },

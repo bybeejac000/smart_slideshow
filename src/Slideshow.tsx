@@ -5,6 +5,17 @@ interface SlideshowProps {
   intervalMs?: number;
 }
 
+function usePreloadPhotos(photos: string[], currentIdx: number, ahead = 2) {
+  useEffect(() => {
+    for (let i = 1; i <= ahead; i++) {
+      const url = photos[(currentIdx + i) % photos.length];
+      if (!url) continue;
+      const img = new Image();
+      img.src = url;
+    }
+  }, [currentIdx, photos, ahead]);
+}
+
 export default function Slideshow({
   photos,
   intervalMs = 6000,
@@ -20,6 +31,8 @@ export default function Slideshow({
       setVisible(true);
     }, 300);
   }, []);
+
+  usePreloadPhotos(photos, idx);
 
   const next = useCallback(() => {
     goTo((idx + 1) % photos.length);
