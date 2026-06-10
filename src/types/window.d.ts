@@ -3,6 +3,7 @@ declare global {
     photoHelper: {
       getList(): Promise<string[]>;
     };
+    getEnvVar(key: string): string | null;
   }
 }
 

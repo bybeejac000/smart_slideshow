@@ -1,7 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface SlideshowProps {
   photos: string[];
+  setPhotos: (photos: string[]) => void;
+  photosListLength: number;
   intervalMs?: number;
 }
 
@@ -18,11 +20,14 @@ function usePreloadPhotos(photos: string[], currentIdx: number, ahead = 2) {
 
 export default function Slideshow({
   photos,
+  setPhotos,
+  photosListLength,
   intervalMs = 6000,
 }: SlideshowProps) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
+  const refreshing = useRef(false);
 
   const goTo = useCallback((i: number) => {
     setVisible(false);
@@ -41,6 +46,31 @@ export default function Slideshow({
   const prev = useCallback(() => {
     goTo((idx - 1 + photos.length) % photos.length);
   }, [idx, photos.length, goTo]);
+
+  // Refresh photo list from Go when running low
+  useEffect(() => {
+    const remainingPhotosInList = photosListLength - idx - 1;
+    if (remainingPhotosInList <= 5 && !refreshing.current) {
+      refreshing.current = true;
+      (async () => {
+        const host = await window.getEnvVar("GO_LISTEN_HOST");
+        const port = await window.getEnvVar("GO_LISTEN_PORT");
+        fetch(`http://${host}:${port}/refresh`)
+          .catch((err) => console.error("Failed to refresh photo list:", err))
+          .finally(() => (refreshing.current = false));
+      })();
+    }
+  }, [idx, photosListLength]);
+
+  // Pull new photos from Redis when running low
+  useEffect(() => {
+    (async () => {
+      if (photos.length <= 2) {
+        const newPhotos = await window.photoHelper.getList();
+        setPhotos([...photos, ...newPhotos]);
+      }
+    })();
+  }, [photos.length]);
 
   // Auto-advance
   useEffect(() => {

@@ -34,6 +34,12 @@ export default defineConfig(({ mode }) => {
               "process.env.PHOTOS_LIST_KEY": JSON.stringify(
                 env.PHOTOS_LIST_KEY ?? "",
               ),
+              "process.env.GO_LISTEN_HOST": JSON.stringify(
+                env.GO_LISTEN_HOST ?? "",
+              ),
+              "process.env.GO_LISTEN_PORT": JSON.stringify(
+                env.GO_LISTEN_PORT ?? "",
+              ),
             },
           },
         },

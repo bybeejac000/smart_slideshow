@@ -7,7 +7,8 @@ import {
   registerProtocols,
   registerSchemesAsPrivileged,
 } from "./media-protocol";
-
+console.log("GO_LISTEN_HOST:", process.env.GO_LISTEN_HOST);
+console.log("GO_LISTEN_PORT:", process.env.GO_LISTEN_PORT);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
