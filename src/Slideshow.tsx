@@ -1,21 +1,14 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import createWebSocket from "./websocket/websocket";
+import styles from "./styles/styles";
+import { validateWebsocketMessage } from "./helpers/validate_websocket_message";
+import { usePreloadPhotos } from "./helpers/preload_photos";
 
 interface SlideshowProps {
   photos: string[];
-  setPhotos: (photos: string[]) => void;
+  setPhotos: React.Dispatch<React.SetStateAction<string[]>>;
   photosListLength: number;
   intervalMs?: number;
-}
-
-function usePreloadPhotos(photos: string[], currentIdx: number, ahead = 2) {
-  useEffect(() => {
-    for (let i = 1; i <= ahead; i++) {
-      const url = photos[(currentIdx + i) % photos.length];
-      if (!url) continue;
-      const img = new Image();
-      img.src = url;
-    }
-  }, [currentIdx, photos, ahead]);
 }
 
 export default function Slideshow({
@@ -28,6 +21,20 @@ export default function Slideshow({
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
   const refreshing = useRef(false);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+
+  useEffect(() => {
+    createWebSocket().then((ws) => setWs(ws));
+  }, []);
+
+  useEffect(() => {
+    if (!ws) return;
+    ws.onmessage = (event) => {
+      const incomingLinks = validateWebsocketMessage(event.data);
+      if (incomingLinks.length === 0) return;
+      setPhotos((prev) => [...incomingLinks, ...prev]);
+    };
+  }, [ws, setPhotos]);
 
   const goTo = useCallback((i: number) => {
     setVisible(false);
@@ -64,13 +71,12 @@ export default function Slideshow({
 
   // Pull new photos from Redis when running low
   useEffect(() => {
+    if (photos.length > 2) return;
     (async () => {
-      if (photos.length <= 2) {
-        const newPhotos = await window.photoHelper.getList();
-        setPhotos([...photos, ...newPhotos]);
-      }
+      const newPhotos = await window.photoHelper.getList();
+      setPhotos((prev) => [...prev, ...newPhotos]);
     })();
-  }, [photos.length]);
+  }, [photos.length, setPhotos]);
 
   // Auto-advance
   useEffect(() => {
@@ -119,25 +125,3 @@ export default function Slideshow({
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    width: "100vw",
-    height: "100vh",
-    background: "#000",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
-    objectFit: "contain",
-    transition: "opacity 0.8s ease",
-  },
-  empty: {
-    color: "#fff",
-    fontFamily: "sans-serif",
-  },
-};

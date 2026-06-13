@@ -18,7 +18,8 @@
     "@opentelemetry/api": "^1.9.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "redis": "^6.0.0"
+    "redis": "^6.0.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
