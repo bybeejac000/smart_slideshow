@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import styles from "./styles/styles";
 import { inMemPicAmt } from "./load_env/load_env";
-
+import { createWebSocket } from "./websocket/websocket";
 // ── Tuning ────────────────────────────────────────────────────────────────────
 // Tell the Go backend to hit /refresh when this many photos remain ahead.
 // Set higher than FETCH_THRESHOLD so Redis is warm by the time we pull from it.
@@ -19,6 +19,11 @@ const BEHIND_BUFFER = 8;
 // Crossfade duration in milliseconds.
 const FADE_MS = 200;
 // ─────────────────────────────────────────────────────────────────────────────
+
+interface incomingInjectPicturesMessage {
+  messageType: number;
+  message: string[];
+}
 
 interface SlideshowProps {
   photos: string[];
@@ -43,7 +48,40 @@ export default function Slideshow({
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFetching = useRef(false);
   const isRefreshing = useRef(false);
+  const ws = useRef<WebSocket | null>(null);
 
+  const injectPictures = (newPictures: string[]) => {
+    setPhotos((prev) => [
+      ...prev.slice(0, idxRef.current + 1),
+      ...newPictures,
+      ...prev.slice(idxRef.current + 1),
+    ]);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const socket = await createWebSocket();
+      if (cancelled) return; // component unmounted while connecting
+
+      ws.current = socket;
+
+      socket.onmessage = (event) => {
+        const incomingMessage: incomingInjectPicturesMessage = JSON.parse(
+          event.data,
+        );
+
+        if (!incomingMessage?.message?.length) return;
+        injectPictures(incomingMessage.message);
+      };
+    })();
+
+    return () => {
+      cancelled = true;
+      ws.current?.close();
+    };
+  }, []); // runs once on mount
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);

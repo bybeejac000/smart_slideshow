@@ -6,6 +6,7 @@ export async function createWebSocket() {
 
   ws.onerror = (err) => {
     console.error("error:", err);
+    return null;
   };
 
   return ws;
