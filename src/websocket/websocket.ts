@@ -10,5 +10,3 @@ export async function createWebSocket() {
 
   return ws;
 }
-
-export default createWebSocket;

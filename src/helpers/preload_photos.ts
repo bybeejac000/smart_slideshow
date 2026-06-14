@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export function usePreloadPhotos(
   photos: string[],
   currentIdx: number,
-  ahead = 2,
+  ahead = 5,
 ) {
   useEffect(() => {
     for (let i = 1; i <= ahead; i++) {

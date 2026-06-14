@@ -40,6 +40,9 @@ export default defineConfig(({ mode }) => {
               "process.env.GO_LISTEN_PORT": JSON.stringify(
                 env.GO_LISTEN_PORT ?? "",
               ),
+              "process.env.IN_MEM_PIC_AMT": JSON.stringify(
+                env.IN_MEM_PIC_AMT ?? "",
+              ),
             },
           },
         },

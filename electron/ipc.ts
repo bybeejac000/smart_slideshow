@@ -19,4 +19,5 @@ const envVars: Record<string, string> = {
   GO_LISTEN_PORT: process.env.GO_LISTEN_PORT || "",
   REDIS_HOST: process.env.REDIS_HOST || "",
   REDIS_PORT: process.env.REDIS_PORT || "",
+  IN_MEM_PIC_AMT: process.env.IN_MEM_PIC_AMT || "",
 };

@@ -5,10 +5,6 @@ import Slideshow from "./Slideshow";
 function App() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [retryCount, setRetryCount] = useState(0);
-  const photoListLength = parseInt(
-    window.getEnvVar("PHOTOS_LIST_KEY") || "0",
-    10,
-  );
 
   console.log(window.getEnvVar("GO_LISTEN_HOST"));
   useEffect(() => {
@@ -42,13 +38,7 @@ function App() {
     })();
   }, [retryCount]);
 
-  return (
-    <Slideshow
-      photos={photos}
-      setPhotos={setPhotos}
-      photosListLength={photoListLength}
-    />
-  );
+  return <Slideshow photos={photos} setPhotos={setPhotos} />;
 }
 
 createRoot(document.getElementById("root")!).render(
