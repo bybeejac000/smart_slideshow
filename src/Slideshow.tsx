@@ -2,21 +2,13 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import styles from "./styles/styles";
 import { inMemPicAmt } from "./load_env/load_env";
 import { createWebSocket } from "./websocket/websocket";
+import { QRModal } from "./components/create_qr_code";
+import { ShowPaused } from "./components/show_paused";
 // ── Tuning ────────────────────────────────────────────────────────────────────
-// Tell the Go backend to hit /refresh when this many photos remain ahead.
-// Set higher than FETCH_THRESHOLD so Redis is warm by the time we pull from it.
 const REFRESH_THRESHOLD = 30;
-
-// Pull new photos from Redis when this many remain ahead in the local list.
 const FETCH_THRESHOLD = 20;
-
-// How many images to preload ahead of the current frame.
 const PRELOAD_AHEAD = 8;
-
-// How many photos to keep *behind* the current index (enables smooth going back).
 const BEHIND_BUFFER = 8;
-
-// Crossfade duration in milliseconds.
 const FADE_MS = 200;
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -39,16 +31,15 @@ export default function Slideshow({
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [opacity, setOpacity] = useState(1);
+  const [showQR, setShowQR] = useState(false);
 
-  // Refs give callbacks/async functions the latest state without re-creating them.
   const photosRef = useRef(photos);
   const idxRef = useRef(idx);
-  // A single pending navigation timer. Cancelling it before creating a new one
-  // is what prevents rapid-click transitions from piling up.
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFetching = useRef(false);
   const isRefreshing = useRef(false);
   const ws = useRef<WebSocket | null>(null);
+  const [intervalReset, setIntervalReset] = useState(0);
 
   const injectPictures = (newPictures: string[]) => {
     setPhotos((prev) => [
@@ -63,7 +54,7 @@ export default function Slideshow({
 
     (async () => {
       const socket = await createWebSocket();
-      if (cancelled) return; // component unmounted while connecting
+      if (cancelled) return;
 
       ws.current = socket;
 
@@ -71,7 +62,6 @@ export default function Slideshow({
         const incomingMessage: incomingInjectPicturesMessage = JSON.parse(
           event.data,
         );
-
         if (!incomingMessage?.message?.length) return;
         injectPictures(incomingMessage.message);
       };
@@ -81,15 +71,16 @@ export default function Slideshow({
       cancelled = true;
       ws.current?.close();
     };
-  }, []); // runs once on mount
+  }, []);
+
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+
   useEffect(() => {
     idxRef.current = idx;
   }, [idx]);
 
-  // Preload upcoming photos so they're already in the browser cache when needed.
   useEffect(() => {
     for (let i = 1; i <= PRELOAD_AHEAD; i++) {
       const url = photos[idx + i];
@@ -98,13 +89,6 @@ export default function Slideshow({
     }
   }, [idx, photos]);
 
-  /**
-   * Navigate to a target index with a smooth fade.
-   *
-   * The key fix: clear any in-flight timer before starting a new one.
-   * Rapid clicks now correctly skip intermediate frames instead of
-   * queuing up a chain of transitions that fire one-by-one.
-   */
   const goTo = useCallback((newIdx: number) => {
     const total = photosRef.current.length;
     if (total === 0) return;
@@ -124,15 +108,23 @@ export default function Slideshow({
     const cur = idxRef.current;
     const total = photosRef.current.length;
     goTo(cur < total - 1 ? cur + 1 : 0);
+    setIntervalReset((r) => r + 1);
   }, [goTo]);
 
   const prev = useCallback(() => {
     const cur = idxRef.current;
     const total = photosRef.current.length;
     goTo(cur > 0 ? cur - 1 : total - 1);
+    setIntervalReset((r) => r + 1);
   }, [goTo]);
 
-  // Don't leave a dangling timer if the component unmounts.
+  const handlePause = useCallback(() => {
+    setPaused((p) => {
+      if (p) setShowQR(false); // unpausing → close modal
+      return !p;
+    });
+  }, []);
+
   useEffect(
     () => () => {
       if (navTimer.current) clearTimeout(navTimer.current);
@@ -140,8 +132,6 @@ export default function Slideshow({
     [],
   );
 
-  // Auto-advance. Intentionally excludes photos.length from deps so adding /
-  // removing photos doesn't reset the interval and cause a mid-cycle stutter.
   useEffect(() => {
     if (paused) return;
     const id = setInterval(() => {
@@ -149,9 +139,8 @@ export default function Slideshow({
       next();
     }, intervalMs);
     return () => clearInterval(id);
-  }, [paused, next, intervalMs]);
+  }, [paused, next, intervalMs, intervalReset]);
 
-  // Keyboard controls.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -162,7 +151,10 @@ export default function Slideshow({
           prev();
           break;
         case " ":
-          setPaused((p) => !p);
+          handlePause();
+          break;
+        case "q":
+          if (paused) setShowQR((s) => !s);
           break;
         case "Escape":
           window.close();
@@ -171,9 +163,8 @@ export default function Slideshow({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [next, prev]);
+  }, [next, prev, handlePause, paused]);
 
-  // ── Phase 1: tell Go to repopulate Redis while we still have breathing room.
   useEffect(() => {
     const ahead = photos.length - idx - 1;
     if (ahead > REFRESH_THRESHOLD || isRefreshing.current) return;
@@ -192,7 +183,6 @@ export default function Slideshow({
     })();
   }, [idx, photos.length]);
 
-  // ── Phase 2: pull new photos from Redis and slide the window forward.
   useEffect(() => {
     const ahead = photos.length - idx - 1;
     if (ahead > FETCH_THRESHOLD || isFetching.current) return;
@@ -203,20 +193,13 @@ export default function Slideshow({
         const newPhotos: string[] | null = await window.photoHelper.getList();
         if (!newPhotos?.length) return;
 
-        // Use refs for the values that matter *at resolution time*, not schedule time.
         const latestPhotos = photosRef.current;
         const latestIdx = idxRef.current;
         const combined = [...latestPhotos, ...newPhotos];
 
-        // Trim from the front of the array, subject to two constraints:
-        //   1. Never trim photos we might navigate back to (respect BEHIND_BUFFER).
-        //   2. Only trim what's needed to stay within inMemPicAmt.
         const trimAmount = Math.max(
           0,
-          Math.min(
-            latestIdx - BEHIND_BUFFER, // constraint 1
-            combined.length - inMemPicAmt, // constraint 2
-          ),
+          Math.min(latestIdx - BEHIND_BUFFER, combined.length - inMemPicAmt),
         );
 
         setPhotos(trimAmount > 0 ? combined.slice(trimAmount) : combined);
@@ -233,12 +216,6 @@ export default function Slideshow({
     console.log(`idx: ${idx} photos: ${photos.length}`);
   }, [idx, photos.length]);
 
-  // TODO: Re-add WebSocket listener here when ready.
-  // It should prepend incoming URLs and bump idx to compensate so the
-  // currently-visible photo doesn't jump:
-  //   setPhotos(prev => [...incomingLinks, ...prev]);
-  //   setIdx(prev => prev + incomingLinks.length);
-
   if (photos.length === 0) {
     return (
       <div style={styles.container}>
@@ -249,6 +226,10 @@ export default function Slideshow({
 
   return (
     <div style={styles.container}>
+      {showQR && paused && (
+        <QRModal url={photos[idx]} onClose={() => setShowQR(false)} />
+      )}
+      {paused && <ShowPaused paused={paused} />}
       <img
         src={photos[idx]}
         alt=""
