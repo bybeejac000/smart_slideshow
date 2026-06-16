@@ -10,9 +10,8 @@ function App() {
   useEffect(() => {
     if (retryCount >= 3) {
       console.log("Max retries reached, giving up");
-      return;
+      throw new Error("Failed to fetch photos after multiple attempts");
     }
-
     (async () => {
       console.log("Fetching photos, attempt:", retryCount);
       const initialPhotos = await window.photoHelper.getList();

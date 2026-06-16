@@ -49,6 +49,7 @@ export default function Slideshow({
     ]);
   };
 
+  //Create temps for incoming WebSocket messages that inject pictures into the slideshow
   useEffect(() => {
     let cancelled = false;
 
@@ -71,7 +72,7 @@ export default function Slideshow({
       cancelled = true;
       ws.current?.close();
     };
-  }, []);
+  });
 
   useEffect(() => {
     photosRef.current = photos;
@@ -191,7 +192,11 @@ export default function Slideshow({
     (async () => {
       try {
         const newPhotos: string[] | null = await window.photoHelper.getList();
-        if (!newPhotos?.length) return;
+
+        if (!newPhotos?.length) {
+          console.log("No new photos found");
+          return;
+        }
 
         const latestPhotos = photosRef.current;
         const latestIdx = idxRef.current;
