@@ -24,6 +24,9 @@ export function QRModal({
       colorDark: "#000000",
       colorLight: "#ffffff",
     });
+    return () => {
+      if (canvasRef.current) canvasRef.current.innerHTML = ""; // cleanup on unmount
+    };
   }, [url]);
 
   return (

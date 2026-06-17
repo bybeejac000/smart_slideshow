@@ -4,10 +4,11 @@ import { inMemPicAmt } from "./load_env/load_env";
 import { createWebSocket } from "./websocket/websocket";
 import { QRModal } from "./components/create_qr_code";
 import { ShowPaused } from "./components/show_paused";
+import { PicturesLoading } from "./components/pictures_loading";
 // ── Tuning ────────────────────────────────────────────────────────────────────
 const REFRESH_THRESHOLD = 30;
 const FETCH_THRESHOLD = 20;
-const PRELOAD_AHEAD = 8;
+const PRELOAD_AHEAD = 20;
 const BEHIND_BUFFER = 8;
 const FADE_MS = 200;
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,14 +41,18 @@ export default function Slideshow({
   const isRefreshing = useRef(false);
   const ws = useRef<WebSocket | null>(null);
   const [intervalReset, setIntervalReset] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const injectPictures = (newPictures: string[]) => {
-    setPhotos((prev) => [
-      ...prev.slice(0, idxRef.current + 1),
-      ...newPictures,
-      ...prev.slice(idxRef.current + 1),
-    ]);
-  };
+  const injectPictures = useCallback(
+    (newPictures: string[]) => {
+      setPhotos((prev) => [
+        ...prev.slice(0, idxRef.current + 1),
+        ...newPictures,
+        ...prev.slice(idxRef.current + 1),
+      ]);
+    },
+    [setPhotos],
+  );
 
   //Create temps for incoming WebSocket messages that inject pictures into the slideshow
   useEffect(() => {
@@ -72,7 +77,7 @@ export default function Slideshow({
       cancelled = true;
       ws.current?.close();
     };
-  });
+  }, [injectPictures]);
 
   useEffect(() => {
     photosRef.current = photos;
@@ -90,31 +95,28 @@ export default function Slideshow({
     }
   }, [idx, photos]);
 
-  const goTo = useCallback((newIdx: number) => {
-    const total = photosRef.current.length;
-    if (total === 0) return;
-    const target = Math.max(0, Math.min(newIdx, total - 1));
-
+  const goTo = useCallback((delta: number) => {
     if (navTimer.current) clearTimeout(navTimer.current);
-
     setOpacity(0);
     navTimer.current = setTimeout(() => {
-      setIdx(target);
+      setIdx((prev) => {
+        const target = Math.max(
+          0,
+          Math.min(prev + delta, photosRef.current.length - 1),
+        );
+        return target;
+      });
       setOpacity(1);
       navTimer.current = null;
     }, FADE_MS);
   }, []);
-
   const next = useCallback(() => {
-    const cur = idxRef.current;
-    const total = photosRef.current.length;
-    goTo(cur < total - 1 ? cur + 1 : 0);
+    goTo(+1);
     setIntervalReset((r) => r + 1);
   }, [goTo]);
 
   const prev = useCallback(() => {
-    const cur = idxRef.current;
-    goTo(cur > 0 ? cur - 1 : cur);
+    goTo(-1);
     setIntervalReset((r) => r + 1);
   }, [goTo]);
 
@@ -133,13 +135,13 @@ export default function Slideshow({
   );
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || loading) return;
     const id = setInterval(() => {
       if (photosRef.current.length === 0) return;
       next();
     }, intervalMs);
     return () => clearInterval(id);
-  }, [paused, next, intervalMs, intervalReset]);
+  }, [paused, next, intervalMs, intervalReset, loading]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -217,15 +219,28 @@ export default function Slideshow({
   }, [idx, photos.length, setPhotos]);
 
   useEffect(() => {
-    console.log(`idx: ${idx} photos: ${photos.length}`);
+    console.log(
+      `idx: ${idx} photos: ${photosRef.current.length} currentphoto ${photosRef.current[idx]}`,
+    );
   }, [idx, photos.length]);
 
-  if (photos.length === 0) {
+  useEffect(() => {
+    if (photos.length === 0) return;
+    const img = new Image();
+    img.onload = () => setLoading(false);
+    img.src = photos[idxRef.current];
+  }, [photos]);
+
+  if (photosRef.current.length === 0) {
     return (
       <div style={styles.container}>
         <p style={styles.empty}>No photos found.</p>
       </div>
     );
+  }
+
+  if (loading) {
+    return <PicturesLoading />;
   }
 
   return (
