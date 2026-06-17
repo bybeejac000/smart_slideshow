@@ -113,8 +113,7 @@ export default function Slideshow({
 
   const prev = useCallback(() => {
     const cur = idxRef.current;
-    const total = photosRef.current.length;
-    goTo(cur > 0 ? cur - 1 : total - 1);
+    goTo(cur > 0 ? cur - 1 : cur);
     setIntervalReset((r) => r + 1);
   }, [goTo]);
 
