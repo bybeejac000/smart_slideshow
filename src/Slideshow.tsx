@@ -42,6 +42,8 @@ export default function Slideshow({
   const ws = useRef<WebSocket | null>(null);
   const [intervalReset, setIntervalReset] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [prevPhotos, setPrevPhotos] = useState(photos);
+  const [prevIdx, setPrevIdx] = useState(idx);
 
   const injectPictures = useCallback(
     (newPictures: string[]) => {
@@ -79,13 +81,14 @@ export default function Slideshow({
     };
   }, [injectPictures]);
 
-  useEffect(() => {
+  if (prevPhotos !== photos) {
     photosRef.current = photos;
-  }, [photos]);
-
-  useEffect(() => {
+    setPrevPhotos(photos);
+  }
+  if (prevIdx !== idx) {
     idxRef.current = idx;
-  }, [idx]);
+    setPrevIdx(idx);
+  }
 
   useEffect(() => {
     for (let i = 1; i <= PRELOAD_AHEAD; i++) {
@@ -127,12 +130,11 @@ export default function Slideshow({
     });
   }, []);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    return () => {
       if (navTimer.current) clearTimeout(navTimer.current);
-    },
-    [],
-  );
+    };
+  }, []);
 
   useEffect(() => {
     if (paused || loading) return;
