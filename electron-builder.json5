@@ -1,0 +1,19 @@
+{
+  appId: "com.yourname.smart-slideshow",
+  productName: "Smart Slideshow",
+  win: {
+    icon: "build/icon.ico",
+    certificateFile: null,
+    signingHashAlgorithms: null,
+  },
+  directories: {
+    output: "dist",
+  },
+  files: ["dist-electron/**/*", "dist/**/*"],
+  extraResources: [
+    {
+      from: "./electron/backend/backend.exe",
+      to: "backend.exe",
+    },
+  ],
+}

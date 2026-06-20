@@ -43,6 +43,35 @@ export default defineConfig(({ mode }) => {
               "process.env.IN_MEM_PIC_AMT": JSON.stringify(
                 env.IN_MEM_PIC_AMT ?? "",
               ),
+              "process.env.IMMICH_API_KEY": JSON.stringify(
+                env.IMMICH_API_KEY ?? "",
+              ),
+              "process.env.IMMICH_RO_API_KEY": JSON.stringify(
+                env.IMMICH_RO_API_KEY ?? "",
+              ),
+              "process.env.IMMICH_URL": JSON.stringify(env.IMMICH_URL ?? ""),
+              "process.env.DB_HOST": JSON.stringify(env.DB_HOST ?? ""),
+              "process.env.DB_PORT": JSON.stringify(env.DB_PORT ?? ""),
+              "process.env.DB_USER": JSON.stringify(env.DB_USER ?? ""),
+              "process.env.DB_PASSWORD": JSON.stringify(env.DB_PASSWORD ?? ""),
+              "process.env.DB_NAME": JSON.stringify(env.DB_NAME ?? ""),
+              "process.env.PHOTO_DEFAULT_LENGTH": JSON.stringify(
+                env.PHOTO_DEFAULT_LENGTH ?? "",
+              ),
+              "process.env.SLIDESHOW_BATCH_SIZE": JSON.stringify(
+                env.SLIDESHOW_BATCH_SIZE ?? "",
+              ),
+              "process.env.DOORBELL_HOST": JSON.stringify(
+                env.DOORBELL_HOST ?? "",
+              ),
+              "process.env.UNIFI_API_KEY": JSON.stringify(
+                env.UNIFI_API_KEY ?? "",
+              ),
+              "process.env.DOORBELL_ID": JSON.stringify(env.DOORBELL_ID ?? ""),
+              "process.env.ML_SERVER": JSON.stringify(env.ML_SERVER ?? ""),
+              "process.env.ML_FACE_MODEL": JSON.stringify(
+                env.ML_FACE_MODEL ?? "",
+              ),
             },
           },
         },

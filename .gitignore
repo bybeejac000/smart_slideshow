@@ -22,7 +22,8 @@ lerna-debug.log*
 !.env.example
 *.local
 .npmrc
-electron-builder.json5
+electron-builder.
+/electron/load_env.ts
 
 # Editor directories and files
 .vscode/*

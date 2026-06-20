@@ -2,15 +2,40 @@ import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { registerIpcHandlers } from "./ipc";
+import { spawn, ChildProcess } from "node:child_process";
+import { env } from "./load_env";
 
 import {
   registerProtocols,
   registerSchemesAsPrivileged,
 } from "./media-protocol";
-console.log("GO_LISTEN_HOST:", process.env.GO_LISTEN_HOST);
-console.log("GO_LISTEN_PORT:", process.env.GO_LISTEN_PORT);
+
+console.log(process.env.PHOTOS_LIST_KEY);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+let backendProcess: ChildProcess | null = null;
+
+function startBackend() {
+  const backendPath = app.isPackaged
+    ? path.join(process.resourcesPath, "backend.exe")
+    : path.join(__dirname, "../electron/backend/backend.exe");
+
+  backendProcess = spawn(backendPath, [], {
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      ...env,
+    },
+  });
+
+  backendProcess.stdout?.on("data", (data) => console.log(`[go] ${data}`));
+  backendProcess.stderr?.on("data", (data) => console.error(`[go] ${data}`));
+  backendProcess.on("exit", (code) =>
+    console.log(`[go] exited with code ${code}`),
+  );
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -36,7 +61,12 @@ registerIpcHandlers();
 registerSchemesAsPrivileged();
 
 app.whenReady().then(() => {
+  startBackend();
   registerProtocols();
   createWindow();
 });
-app.on("window-all-closed", () => app.quit());
+
+app.on("window-all-closed", () => {
+  backendProcess?.kill();
+  app.quit();
+});
