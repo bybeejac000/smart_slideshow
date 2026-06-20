@@ -1,17 +1,28 @@
 import { Dispatch, SetStateAction } from "react";
 
-export async function createWebSocket() {
-  const host = await window.getEnvVar("GO_LISTEN_HOST");
-  const port = await window.getEnvVar("GO_LISTEN_PORT");
+export function createWebSocket(): Promise<WebSocket> {
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const retryDelay = 1000;
 
-  const ws = new WebSocket(`ws://${host}:${port}/injectPictures`);
+    function tryConnect() {
+      const ws = new WebSocket("ws://localhost:8080/injectPictures");
 
-  ws.onerror = (err) => {
-    console.error("error:", err);
-    return null;
-  };
+      ws.onopen = () => resolve(ws);
 
-  return ws;
+      ws.onerror = () => {
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(tryConnect, retryDelay);
+        } else {
+          reject(new Error("Could not connect to backend after 10 attempts"));
+        }
+      };
+    }
+
+    tryConnect();
+  });
 }
 
 export function initializePhotoList(

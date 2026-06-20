@@ -1,13 +1,8 @@
-import { createClient } from "redis";
+import Redis from "ioredis";
 
-const REDIS_HOST = process.env.REDIS_HOST;
-const REDIS_PORT = process.env.REDIS_PORT;
-
-if (!REDIS_HOST || !REDIS_PORT)
-  throw new Error("REDIS_HOST or REDIS_PORT is not set");
-
-const client = createClient({
-  url: `redis://${REDIS_HOST}:${REDIS_PORT}`,
+const client = new Redis({
+  host: process.env.REDIS_HOST,
+  port: parseInt(process.env.REDIS_PORT ?? "6379"),
 });
 
 export default client;

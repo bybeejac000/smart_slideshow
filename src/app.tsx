@@ -53,6 +53,7 @@ function App() {
         const incomingMessage: incomingInjectPicturesMessage = JSON.parse(
           event.data,
         );
+
         if (!incomingMessage?.message?.length) return;
         injectPictures(incomingMessage.message);
       };

@@ -16,12 +16,9 @@
     "typecheck": "pnpm typecheck:node && pnpm typecheck:app"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.1",
+    "ioredis": "^5.11.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "redis": "^6.0.0",
-    "redis-server": "^1.2.2",
-    "ws": "^8.21.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

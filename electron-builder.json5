@@ -15,5 +15,13 @@
       from: "./electron/backend/backend.exe",
       to: "backend.exe",
     },
+    {
+      from: "./electron/backend/redis-server.exe",
+      to: "redis-server.exe",
+    },
+    {
+      from: "./.env",
+      to: ".env",
+    },
   ],
 }

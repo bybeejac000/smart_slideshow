@@ -39,3 +39,4 @@ electron-builder.
 #builds
 dist
 dist-electron
+*.exe*
