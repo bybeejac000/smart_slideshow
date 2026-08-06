@@ -40,3 +40,5 @@ electron-builder.
 dist
 dist-electron
 *.exe*
+*.rdb
+/build

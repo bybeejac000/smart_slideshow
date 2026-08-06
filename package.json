@@ -40,8 +40,20 @@
   },
   "extraResources": [
     {
-      "from": "./electron/backend/backend.exe",
+      "from": "./build/backend",
+      "to": "backend"
+    },
+    {
+      "from": "./build/backend.exe",
       "to": "backend.exe"
+    },
+    {
+      "from": "./build/redis-server",
+      "to": "redis-server"
+    },
+    {
+      "from": "./build/redis-server.exe",
+      "to": "redis-server.exe"
     }
   ]
 }
