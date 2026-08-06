@@ -1,5 +1,4 @@
-import { StrictMode, useState, useEffect, useRef, useCallback } from "react";
-import { createRoot } from "react-dom/client";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Slideshow from "./Slideshow";
 import {
   createWebSocket,
@@ -66,6 +65,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Refresh photos if we are within the refresh threshold and not already refreshing
     if (
       photos.length - idxRef.current <= REFRESH_THRESHOLD &&
       !isRefreshing.current &&
@@ -76,9 +76,8 @@ function App() {
       refreshPhotos(isRefreshing);
       console.log("Refresh triggered");
     }
-  }, [photos, idx]);
 
-  useEffect(() => {
+    // Fetch more photos if we are within the fetch threshold and not already fetching
     const ahead = photos.length - idxRef.current - 1;
     if (ahead <= FETCH_THRESHOLD && !isFetching.current) {
       refetchPhotos(
@@ -102,11 +101,5 @@ function App() {
     />
   );
 }
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
 
 export default App;
