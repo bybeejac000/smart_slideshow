@@ -11,6 +11,7 @@ import { QRModal } from "./components/create_qr_code";
 import { ShowPaused } from "./components/show_paused";
 import { PicturesLoading } from "./components/pictures_loading";
 import { MediaAssetLocationMetadata } from "./components/metadata_icons";
+import { fetchMetadataForPhoto } from "./helpers/fetch_metadata";
 // ── Tuning ────────────────────────────────────────────────────────────────────
 const PRELOAD_AHEAD = 10;
 const FADE_MS = 200;
@@ -53,21 +54,24 @@ export default function Slideshow({
     new Image().src = url;
   }, [idx, photos]);
 
-  const goTo = useCallback((delta: number) => {
-    if (navTimer.current) clearTimeout(navTimer.current);
-    setOpacity(0);
-    navTimer.current = setTimeout(() => {
-      setIdx((prev) => {
-        const target = Math.max(
-          0,
-          Math.min(prev + delta, photosRef.current.length - 1),
-        );
-        return target;
-      });
-      setOpacity(1);
-      navTimer.current = null;
-    }, FADE_MS);
-  }, []);
+  const goTo = useCallback(
+    (delta: number) => {
+      if (navTimer.current) clearTimeout(navTimer.current);
+      setOpacity(0);
+      navTimer.current = setTimeout(() => {
+        setIdx((prev) => {
+          const target = Math.max(
+            0,
+            Math.min(prev + delta, photosRef.current.length - 1),
+          );
+          return target;
+        });
+        setOpacity(1);
+        navTimer.current = null;
+      }, FADE_MS);
+    },
+    [setIdx],
+  );
 
   const next = useCallback(() => {
     goTo(+1);
@@ -85,28 +89,12 @@ export default function Slideshow({
         setShowQR(false);
         setMetadata(null);
       } // unpausing → close modal
+      else {
+        void fetchMetadataForPhoto(photos[idx], setMetadata);
+      }
       return !p;
     });
-
-    if (!paused) {
-      const apiKey = await window.getEnvVar("IMMICH_RO_API_KEY");
-      const immichUrl = await window.getEnvVar("IMMICH_URL");
-      const match = photos[idx].match(/\/assets\/([0-9a-fA-F-]{36})/);
-      const assetId = match ? match[1] : null;
-      const metadataUrl = `${immichUrl}/api/assets/${assetId}`;
-
-      if (!apiKey || !immichUrl || !assetId) return null;
-      const res = await fetch(metadataUrl, {
-        headers: {
-          "x-api-key": apiKey,
-          accept: "application/json",
-        },
-      });
-      const data: MediaAssetLocationMetadata = await res.json();
-      console.log(data);
-      setMetadata(data);
-    }
-  }, [idx, paused, photos]);
+  }, [idx, photos]);
 
   // Auto-advance slideshow
   useEffect(() => {
@@ -143,6 +131,11 @@ export default function Slideshow({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev, handlePause, paused]);
+
+  useEffect(() => {
+    if (!paused) return;
+    void fetchMetadataForPhoto(photos[idx], setMetadata);
+  }, [idx, paused, photos]);
 
   useEffect(() => {
     console.log(
