@@ -152,6 +152,7 @@ const Metadata = ({ metadata }: { metadata: MediaAssetLocationMetadata }) => {
   ) {
     return null;
   }
+  console.log(metadata);
 
   return (
     <div className="metadata-container">

@@ -15,6 +15,8 @@ const styles: Record<string, React.CSSProperties> = {
     transition: "opacity 0.8s ease",
   },
   video: {
+    width: "100%",
+    height: "100%",
     maxWidth: "100%",
     maxHeight: "100%",
     objectFit: "contain",

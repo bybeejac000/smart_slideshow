@@ -33,8 +33,81 @@ function App() {
       if (isVideoUrl(url)) {
         const video = document.createElement("video");
         video.preload = "metadata";
-        video.onloadeddata = () => onReady?.();
-        video.onerror = () => onError();
+        video.muted = true;
+        video.playsInline = true;
+
+        let settled = false;
+        const finalize = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          if (ok) onReady?.();
+          else onError();
+        };
+
+        const timeoutId = window.setTimeout(() => {
+          finalize(false);
+        }, 12000);
+
+        const cleanup = () => {
+          window.clearTimeout(timeoutId);
+          video.onloadedmetadata = null;
+          video.oncanplay = null;
+          video.onerror = null;
+          video.onstalled = null;
+          video.onabort = null;
+          video.onwaiting = null;
+          video.pause();
+          video.src = "";
+          video.load();
+        };
+
+        const markReady = () => {
+          void video
+            .play()
+            .then(() => {
+              video.pause();
+              finalize(true);
+            })
+            .catch((err: unknown) => {
+              // NotSupportedError indicates codec/container/transcode failure.
+              if (
+                err instanceof DOMException &&
+                err.name === "NotSupportedError"
+              ) {
+                finalize(false);
+                return;
+              }
+
+              // Autoplay policy rejections can happen even if media is decodable.
+              if (
+                err instanceof DOMException &&
+                err.name === "NotAllowedError"
+              ) {
+                finalize(true);
+                return;
+              }
+
+              finalize(false);
+            });
+        };
+
+        video.onloadedmetadata = markReady;
+        video.oncanplay = markReady;
+        video.onerror = () => {
+          // MEDIA_ERR_DECODE (3) and MEDIA_ERR_SRC_NOT_SUPPORTED (4) indicate unplayable media.
+          const mediaErrCode = video.error?.code;
+          if (mediaErrCode === 3 || mediaErrCode === 4) {
+            finalize(false);
+            return;
+          }
+          finalize(false);
+        };
+        video.onstalled = () => finalize(false);
+        video.onabort = () => finalize(false);
+        video.onwaiting = () => {
+          // If waiting persists, timeout will fail this preload.
+        };
         video.src = url;
         video.load();
         return;
