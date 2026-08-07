@@ -13,13 +13,13 @@ import { PicturesLoading } from "./components/pictures_loading";
 import { MediaAssetLocationMetadata } from "./components/metadata_icons";
 import { fetchMetadataForPhoto } from "./helpers/fetch_metadata";
 // ── Tuning ────────────────────────────────────────────────────────────────────
-const PRELOAD_AHEAD = 10;
 const FADE_MS = 200;
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface SlideshowProps {
   photos: string[];
   idx: number;
+  loading: boolean;
   setIdx: Dispatch<SetStateAction<number>>;
   setPhotos: React.Dispatch<React.SetStateAction<string[]>>;
   intervalMs?: number;
@@ -29,6 +29,7 @@ export default function Slideshow({
   photos,
   idx,
   setIdx,
+  loading,
   intervalMs = 6000,
 }: SlideshowProps) {
   const [paused, setPaused] = useState(false);
@@ -38,8 +39,6 @@ export default function Slideshow({
   const idxRef = useRef(idx);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [intervalReset, setIntervalReset] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const hasLoaded = useRef(false);
   const [metadata, setMetadata] = useState<MediaAssetLocationMetadata | null>(
     null,
   );
@@ -47,12 +46,6 @@ export default function Slideshow({
   photosRef.current = photos;
 
   idxRef.current = idx;
-
-  useEffect(() => {
-    const url = photos[idx + PRELOAD_AHEAD];
-    if (!url) return;
-    new Image().src = url;
-  }, [idx, photos]);
 
   const goTo = useCallback(
     (delta: number) => {
@@ -142,25 +135,6 @@ export default function Slideshow({
       `idx: ${idx} photos: ${photosRef.current.length} currentphoto ${photosRef.current[idx]}`,
     );
   }, [idx, photos.length]);
-
-  useEffect(() => {
-    //Preload first one
-    if (photos.length === 0 || hasLoaded.current) return;
-    hasLoaded.current = true;
-    const img = new Image();
-    img.onload = () => setLoading(false);
-    img.src = photos[0];
-    //Preload images
-    for (let i = 1; i <= PRELOAD_AHEAD; i++) {
-      const url = photos[i];
-      if (!url) break;
-      new Image().src = url;
-    }
-    //Cleanup navtimer
-    return () => {
-      if (navTimer.current) clearTimeout(navTimer.current);
-    };
-  }, [photos]);
 
   if (photosRef.current.length === 0) {
     return (

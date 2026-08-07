@@ -29,6 +29,5 @@ export async function fetchMetadataForPhoto(
   }
 
   const data: MediaAssetLocationMetadata = await res.json();
-  console.log("set the data");
   setMetadata(data);
 }

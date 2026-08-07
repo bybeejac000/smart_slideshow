@@ -10,6 +10,7 @@ const REFRESH_THRESHOLD = 30;
 const FETCH_THRESHOLD = 20;
 const BEHIND_BUFFER = 50;
 const RETRY_COUNT = 3;
+const PRELOAD_AHEAD = 10;
 
 interface incomingInjectPicturesMessage {
   messageType: number;
@@ -24,6 +25,7 @@ function App() {
   const ws = useRef<WebSocket | null>(null);
   const idxRef = useRef(idx);
   const refreshedRef = useRef(false);
+  const [loading, setLoading] = useState(true);
 
   idxRef.current = idx;
 
@@ -62,7 +64,7 @@ function App() {
       cancelled = true;
       ws.current?.close();
     };
-  }, []);
+  }, [injectPictures]);
 
   useEffect(() => {
     // Refresh photos if we are within the refresh threshold and not already refreshing
@@ -92,10 +94,50 @@ function App() {
     }
   }, [photos, idx]);
 
+  useEffect(() => {
+    //Preload first one
+    if (photos.length === 0 || !loading) return;
+    const firstUrl = photos[0];
+    const firstImg = new Image();
+
+    firstImg.onload = () => {
+      setLoading(false);
+
+      // Preload additional images only after the first image succeeds.
+      for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+        const url = photos[i];
+        if (!url) break;
+        const img = new Image();
+        img.onerror = () => {
+          setPhotos((prev) => prev.filter((p) => p !== url));
+        };
+        img.src = url;
+      }
+    };
+
+    firstImg.onerror = () => {
+      setPhotos((prev) => prev.filter((p) => p !== firstUrl));
+    };
+
+    firstImg.src = firstUrl;
+  }, [photos, loading]);
+
+  useEffect(() => {
+    const url = photos[idx + PRELOAD_AHEAD];
+    if (!url) return;
+    const img = new Image();
+    img.src = url;
+
+    img.onerror = () => {
+      setPhotos((prev) => prev.filter((p) => p !== url));
+    };
+  }, [idx, photos]);
+
   return (
     <Slideshow
       photos={photos}
       setPhotos={setPhotos}
+      loading={loading}
       idx={idx}
       setIdx={setIdx}
     />
