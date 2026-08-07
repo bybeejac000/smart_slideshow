@@ -82,6 +82,7 @@ export default function Slideshow({
     });
   }, []);
 
+  // Auto-advance slideshow
   useEffect(() => {
     if (paused || loading) return;
     const id = setInterval(() => {
@@ -91,6 +92,7 @@ export default function Slideshow({
     return () => clearInterval(id);
   }, [paused, next, intervalMs, intervalReset, loading]);
 
+  // Keyboard navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -111,6 +113,7 @@ export default function Slideshow({
           break;
       }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev, handlePause, paused]);
