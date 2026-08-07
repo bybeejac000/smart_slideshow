@@ -14,6 +14,12 @@ const styles: Record<string, React.CSSProperties> = {
     objectFit: "contain",
     transition: "opacity 0.8s ease",
   },
+  video: {
+    maxWidth: "100%",
+    maxHeight: "100%",
+    objectFit: "contain",
+    transition: "opacity 0.8s ease",
+  },
   empty: {
     color: "#fff",
     fontFamily: "sans-serif",

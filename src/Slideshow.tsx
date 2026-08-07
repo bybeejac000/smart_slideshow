@@ -12,6 +12,7 @@ import { ShowPaused } from "./components/show_paused";
 import { PicturesLoading } from "./components/pictures_loading";
 import { MediaAssetLocationMetadata } from "./components/metadata_icons";
 import { fetchMetadataForPhoto } from "./helpers/fetch_metadata";
+import { isVideoUrl } from "./helpers/media_type";
 // ── Tuning ────────────────────────────────────────────────────────────────────
 const FADE_MS = 200;
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ export default function Slideshow({
   const [metadata, setMetadata] = useState<MediaAssetLocationMetadata | null>(
     null,
   );
+  const currentUrl = photos[idx];
+  const currentIsVideo = Boolean(currentUrl) && isVideoUrl(currentUrl);
 
   photosRef.current = photos;
 
@@ -152,21 +155,37 @@ export default function Slideshow({
     <div style={styles.container}>
       {showQR && paused && (
         <QRModal
-          url={photos[idx]}
+          url={currentUrl}
           onClose={() => setShowQR(false)}
           metadata={metadata}
         />
       )}
       {paused && <ShowPaused paused={paused} />}
-      <img
-        src={photos[idx]}
-        alt=""
-        style={{
-          ...styles.image,
-          opacity,
-          transition: `opacity ${FADE_MS}ms ease-in-out`,
-        }}
-      />
+      {currentIsVideo ? (
+        <video
+          key={currentUrl}
+          src={currentUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{
+            ...styles.video,
+            opacity,
+            transition: `opacity ${FADE_MS}ms ease-in-out`,
+          }}
+        />
+      ) : (
+        <img
+          src={currentUrl}
+          alt=""
+          style={{
+            ...styles.image,
+            opacity,
+            transition: `opacity ${FADE_MS}ms ease-in-out`,
+          }}
+        />
+      )}
     </div>
   );
 }

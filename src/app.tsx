@@ -6,6 +6,7 @@ import {
   refetchPhotos,
   refreshPhotos,
 } from "./websocket/websocket";
+import { isVideoUrl } from "./helpers/media_type";
 const REFRESH_THRESHOLD = 30;
 const FETCH_THRESHOLD = 20;
 const BEHIND_BUFFER = 50;
@@ -27,6 +28,39 @@ function App() {
   const refreshedRef = useRef(false);
   const [loading, setLoading] = useState(true);
 
+  const preloadUrl = useCallback(
+    (url: string, onError: () => void, onReady?: () => void) => {
+      if (isVideoUrl(url)) {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadeddata = () => onReady?.();
+        video.onerror = () => onError();
+        video.src = url;
+        video.load();
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => onReady?.();
+      img.onerror = () => onError();
+      img.src = url;
+    },
+    [],
+  );
+
+  const preloadAhead = useCallback(
+    (basePhotos: string[]) => {
+      for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+        const url = basePhotos[i];
+        if (!url) break;
+        preloadUrl(url, () => {
+          setPhotos((prev) => prev.filter((p) => p !== url));
+        });
+      }
+    },
+    [preloadUrl],
+  );
+
   idxRef.current = idx;
 
   const injectPictures = useCallback(
@@ -43,7 +77,6 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     initializePhotoList(setPhotos, RETRY_COUNT);
-
     (async () => {
       const socket = await createWebSocket();
       if (cancelled) return;
@@ -98,40 +131,25 @@ function App() {
     //Preload first one
     if (photos.length === 0 || !loading) return;
     const firstUrl = photos[0];
-    const firstImg = new Image();
-
-    firstImg.onload = () => {
-      setLoading(false);
-
-      // Preload additional images only after the first image succeeds.
-      for (let i = 1; i <= PRELOAD_AHEAD; i++) {
-        const url = photos[i];
-        if (!url) break;
-        const img = new Image();
-        img.onerror = () => {
-          setPhotos((prev) => prev.filter((p) => p !== url));
-        };
-        img.src = url;
-      }
-    };
-
-    firstImg.onerror = () => {
-      setPhotos((prev) => prev.filter((p) => p !== firstUrl));
-    };
-
-    firstImg.src = firstUrl;
-  }, [photos, loading]);
+    preloadUrl(
+      firstUrl,
+      () => {
+        setPhotos((prev) => prev.filter((p) => p !== firstUrl));
+      },
+      () => {
+        setLoading(false);
+        preloadAhead(photos);
+      },
+    );
+  }, [photos, loading, preloadAhead, preloadUrl]);
 
   useEffect(() => {
     const url = photos[idx + PRELOAD_AHEAD];
     if (!url) return;
-    const img = new Image();
-    img.src = url;
-
-    img.onerror = () => {
+    preloadUrl(url, () => {
       setPhotos((prev) => prev.filter((p) => p !== url));
-    };
-  }, [idx, photos]);
+    });
+  }, [idx, photos, preloadUrl]);
 
   return (
     <Slideshow
