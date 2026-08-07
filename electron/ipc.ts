@@ -20,4 +20,6 @@ const envVars: Record<string, string> = {
   REDIS_HOST: process.env.REDIS_HOST || "",
   REDIS_PORT: process.env.REDIS_PORT || "",
   IN_MEM_PIC_AMT: process.env.IN_MEM_PIC_AMT || "",
+  IMMICH_URL: process.env.IMMICH_URL || "",
+  IMMICH_RO_API_KEY: process.env.IMMICH_RO_API_KEY || "",
 };

@@ -10,6 +10,7 @@ import styles from "./styles/styles";
 import { QRModal } from "./components/create_qr_code";
 import { ShowPaused } from "./components/show_paused";
 import { PicturesLoading } from "./components/pictures_loading";
+import { MediaAssetLocationMetadata } from "./components/metadata_icons";
 // ── Tuning ────────────────────────────────────────────────────────────────────
 const PRELOAD_AHEAD = 10;
 const FADE_MS = 200;
@@ -38,6 +39,9 @@ export default function Slideshow({
   const [intervalReset, setIntervalReset] = useState(0);
   const [loading, setLoading] = useState(true);
   const hasLoaded = useRef(false);
+  const [metadata, setMetadata] = useState<MediaAssetLocationMetadata | null>(
+    null,
+  );
 
   photosRef.current = photos;
 
@@ -75,12 +79,34 @@ export default function Slideshow({
     setIntervalReset((r) => r + 1);
   }, [goTo]);
 
-  const handlePause = useCallback(() => {
+  const handlePause = useCallback(async () => {
     setPaused((p) => {
-      if (p) setShowQR(false); // unpausing → close modal
+      if (p) {
+        setShowQR(false);
+        setMetadata(null);
+      } // unpausing → close modal
       return !p;
     });
-  }, []);
+
+    if (!paused) {
+      const apiKey = await window.getEnvVar("IMMICH_RO_API_KEY");
+      const immichUrl = await window.getEnvVar("IMMICH_URL");
+      const match = photos[idx].match(/\/assets\/([0-9a-fA-F-]{36})/);
+      const assetId = match ? match[1] : null;
+      const metadataUrl = `${immichUrl}/api/assets/${assetId}`;
+
+      if (!apiKey || !immichUrl || !assetId) return null;
+      const res = await fetch(metadataUrl, {
+        headers: {
+          "x-api-key": apiKey,
+          accept: "application/json",
+        },
+      });
+      const data: MediaAssetLocationMetadata = await res.json();
+      console.log(data);
+      setMetadata(data);
+    }
+  }, [idx, paused, photos]);
 
   // Auto-advance slideshow
   useEffect(() => {
@@ -158,7 +184,11 @@ export default function Slideshow({
   return (
     <div style={styles.container}>
       {showQR && paused && (
-        <QRModal url={photos[idx]} onClose={() => setShowQR(false)} />
+        <QRModal
+          url={photos[idx]}
+          onClose={() => setShowQR(false)}
+          metadata={metadata}
+        />
       )}
       {paused && <ShowPaused paused={paused} />}
       <img

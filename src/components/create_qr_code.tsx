@@ -1,33 +1,55 @@
-import { useEffect, useRef } from "react";
-
+import { useEffect, useRef, useState } from "react";
+import Metadata, { MediaAssetLocationMetadata } from "./metadata_icons";
 export function QRModal({
   url,
   onClose,
+  metadata,
 }: {
   url: string;
   onClose: () => void;
+  metadata: MediaAssetLocationMetadata | null;
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [qrSize, setQrSize] = useState(200);
+
+  useEffect(() => {
+    const updateQrSize = () => {
+      const shortestViewportEdge = Math.min(
+        window.innerWidth,
+        window.innerHeight,
+      );
+      // Keep QR at a stable proportion of the screen while avoiding extremes.
+      const nextSize = Math.round(
+        Math.max(160, Math.min(520, shortestViewportEdge * 0.24)),
+      );
+      setQrSize(nextSize);
+    };
+
+    updateQrSize();
+    window.addEventListener("resize", updateQrSize);
+    return () => window.removeEventListener("resize", updateQrSize);
+  }, []);
 
   useEffect(() => {
     // Using the qrcode library via CDN — add to your index.html:
     // <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    if (!canvasRef.current) return;
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
     const QRCode = window.QRCode;
     if (!QRCode) return;
-    canvasRef.current.innerHTML = "";
+    canvasEl.innerHTML = "";
 
-    new QRCode(canvasRef.current, {
+    new QRCode(canvasEl, {
       text: url,
-      width: 200,
-      height: 200,
+      width: qrSize,
+      height: qrSize,
       colorDark: "#000000",
       colorLight: "#ffffff",
     });
     return () => {
-      if (canvasRef.current) canvasRef.current.innerHTML = ""; // cleanup on unmount
+      canvasEl.innerHTML = ""; // cleanup on unmount
     };
-  }, [url]);
+  }, [url, qrSize]);
 
   return (
     <div
@@ -47,7 +69,7 @@ export function QRModal({
         style={{
           background: "#fff",
           borderRadius: 12,
-          padding: 32,
+          padding: "clamp(20px, 3vmin, 32px)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -61,7 +83,7 @@ export function QRModal({
             margin: 0,
             fontSize: 12,
             color: "#888",
-            maxWidth: 200,
+            maxWidth: qrSize,
             wordBreak: "break-all",
             textAlign: "center",
           }}
@@ -81,6 +103,7 @@ export function QRModal({
         >
           Close
         </button>
+        {metadata && <Metadata metadata={metadata} />}
       </div>
     </div>
   );

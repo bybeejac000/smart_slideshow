@@ -43,9 +43,6 @@ export default defineConfig(({ mode }) => {
               "process.env.IN_MEM_PIC_AMT": JSON.stringify(
                 env.IN_MEM_PIC_AMT ?? "",
               ),
-              "process.env.IMMICH_API_KEY": JSON.stringify(
-                env.IMMICH_API_KEY ?? "",
-              ),
               "process.env.IMMICH_RO_API_KEY": JSON.stringify(
                 env.IMMICH_RO_API_KEY ?? "",
               ),
